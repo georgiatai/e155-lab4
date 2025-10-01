@@ -2,6 +2,11 @@
 // Fur Elise, E155 Lab 4
 // Updated Fall 2024
 
+#include "STM32L432KC_RCC.h"
+#include "STM32L432KC_TIM.h"
+#include "STM32L432KC_GPIO.h"
+#include "STM32L432KC_FLASH.h"
+
 // Pitch in Hz, duration in ms
 const int notes[][2] = {
 {659,	125},

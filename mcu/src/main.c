@@ -1,3 +1,15 @@
+/*********************************************************************
+*                    SEGGER Microcontroller GmbH                     *
+*                        The Embedded Experts                        *
+**********************************************************************
+
+-------------------------- END-OF-HEADER -----------------------------
+
+File    : main.c
+Purpose : Generic application start
+
+*/
+
 // main.c
 // Fur Elise, E155 Lab 4
 // Updated Fall 2024
@@ -6,9 +18,10 @@
 #include "STM32L432KC_TIM.h"
 #include "STM32L432KC_GPIO.h"
 #include "STM32L432KC_FLASH.h"
+#include <stdio.h>
 
 // Pitch in Hz, duration in ms
-const int notes[][2] = {
+const int notes_i[][2] = {
 {659,	125},
 {623,	125},
 {659,	125},
@@ -119,7 +132,7 @@ const int notes[][2] = {
 {440,	500},
 {  0,	0}};
 
-const int cheat_code[][2] = {
+const int notes[][2] = {
     {370,  250}, // G♭4
     {311,  250}, // E♭4
     {311,  500}, // E♭4
@@ -173,7 +186,7 @@ const int cheat_code[][2] = {
     {466,  250}, // B♭4
     {466,  125}, // B♭4
     {415,  250}, // A♭4
-    {622, 1625}, // D♭5
+    {554, 1625}, // D♭5
 
     {311,  250}, // E♭4
     {349,  250}, // F4
@@ -226,7 +239,7 @@ const int cheat_code[][2] = {
     {415,  125}, // A♭4
     {370,  500}, // G♭4
     {493,  375}, // D♭4
-    {415, 2375}, // A♭4
+    {415, 1375}, // A♭4
 
     {466,  500}, // B♭4
     {493,  375}, // C♭5
@@ -246,33 +259,30 @@ int main(void) {
     configureClock();
 	
     // Setting up clocks
-    RCC->APB2ENR |= (1 << 0);  // GPIOA
+    RCC->AHB2ENR |= (1 << 0);  // GPIOA
     RCC->APB2ENR |= (1 << 16); // TIM15
     RCC->APB2ENR |= (1 << 17); // TIM16
 
     // Setting up GPIOA
-    pinMode(5, 2); // PA5 as alternate function (TIM15_CH1)
+    pinMode(6, 2); // PA6 as alternate function (TIM16_CH1)
 
-    GPIO->MODER &= ~(0b11 << 2*5); // Clear mode bits for PA5
-    GPIO->MODER |=  (0b10 << 2*5); // Set PA5 to alternate function mode
-
-    GPIO->AFRL &= ~(0b1111 << 4*5); // Clear AFRL5
-    GPIO->AFRL |=  (0b0010 << 4*5); // Set AFRL5 to AF2 (TIM15_CH1)
+    GPIO->AFRL &= ~(0b1111 << 4*6); // Clear AFRL5
+    GPIO->AFRL |=  (0b1110 << 4*6); // Set AFRL5 to AF2 (TIM15_CH1)
     
     // Initialize timers
-    psc_val_cnt = 15; // freq_CLK / (psc_val + 1) = (80 MHz / (15 + 1)) = 5 MHz
-    psc_val_pwm = 79; // freq_CLK / (psc_val + 1) = (80 MHz / (79 + 1)) = 1 MHz
+    int psc_val_cnt = 4999; // freq_CLK / (psc_val + 1) = (80 MHz / (15 + 1)) = 5 MHz
+    int psc_val_pwm = 799; // freq_CLK / (psc_val + 1) = (80 MHz / (79 + 1)) = 1 MHz
 
     initTIM(TIM15, psc_val_cnt);
     initPWM(TIM16, psc_val_pwm);
 
     // for loop
-	for (int i = 0; i < sizeof(notes) ; i++) {
+    for (int i = 0; i < (sizeof(notes)/sizeof(notes[0])) ; i++) {
         int note_freq = notes[i][0];
         int note_dur  = notes[i][1];
 
-        PWM_setDutyCycle(TIM16, note_freq, 50); // 50% duty cycle
-        delay_millis(TIM15, note_dur);
+        PWM_setDutyCycle(TIM16, note_freq, 50, psc_val_pwm); // 50% duty cycle
+        delay_millis(TIM15, note_dur, psc_val_cnt);
 
     }
 

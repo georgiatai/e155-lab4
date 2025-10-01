@@ -2,15 +2,18 @@
 // Source code for TIM functions
 
 #include "STM32L432KC_TIM.h"
+#include <stdio.h>
 
-void initTIM(TIM_TypeDef *TIMx, uint32_t psc_val) {
+void initTIM(TIMx_TypeDef *TIMx, uint32_t psc_val) {
     // Set prescaler value
     TIMx->PSC = psc_val;
 
-    // Disable slave mode (bit 16, 2:0 = 0000)
-    TIMx->SMCR &= ~(0b111 << 0);
-    TIMx->SMCR &= ~(1 << 16);
+    //// Disable slave mode (bit 16, 2:0 = 0000)
+    //TIMx->SMCR &= ~(0b111 << 0);
+    //TIMx->SMCR &= ~(1 << 16);
 
+    // clear UIF
+    TIMx->EGR  &= ~(1 << 0);
     // Generate an update event to load the prescaler value to the clock
     TIMx->EGR |= (1 << 0); 
 
@@ -19,11 +22,14 @@ void initTIM(TIM_TypeDef *TIMx, uint32_t psc_val) {
 
 }
 
-void delay_millis(TIM_TypeDef * TIMx, uint32_t ms) {
+void delay_millis(TIMx_TypeDef * TIMx, uint32_t ms, uint32_t psc_val) {
     // Set auto-reload register
     // wait_time / 1000 * freq = arr_val
-    arr_val = ms / 1000 * (80000000 / (15+1));
+    int arr_val = ms * (80000 / (psc_val+1));
     TIMx->ARR = arr_val;
+
+    // clear UIF
+    TIMx->EGR  &= ~(1 << 0);
 
     // force update
     TIMx->EGR |=  (1 << 0);
@@ -33,13 +39,12 @@ void delay_millis(TIM_TypeDef * TIMx, uint32_t ms) {
 
     // reset count
     TIMx->CNT = 0;
-
+  
     // Wait for update event (SR bit 0)
-    while((TIMx->SR >> 0 & 1) != 1);
-
+    while(((TIMx->SR) & 1U) != 1);
 }
 
-void initPWM(TIM_TypeDef *TIMx, uint32_t psc_val) {
+void initPWM(TIMx_TypeDef *TIMx, uint32_t psc_val) {
     // Set prescaler value
     TIMx->PSC = psc_val;
 
@@ -67,11 +72,11 @@ void initPWM(TIM_TypeDef *TIMx, uint32_t psc_val) {
 
 }
 
-void PWM_setDutyCycle(TIM_TypeDef *TIMx, uint32_t note_freq, uint32_t duty_cycle) {
+void PWM_setDutyCycle(TIMx_TypeDef *TIMx, uint32_t note_freq, uint32_t duty_cycle, uint32_t psc_val) {
     // Set auto-reload register
     // clock_freq = 80 MHz / (psc_val + 1)
     // arr_val = clock_freq / note_freq
-    arr_val = (note_freq > 0) ? ((80000000 / (15+1)) / note_freq) : 0;
+    int arr_val = (note_freq > 0) ? ((80000000 / (psc_val+1)) / note_freq - 1) : 0;
     TIMx->ARR = arr_val;
 
     TIMx->CCR1 = arr_val * duty_cycle / 100;

@@ -57,9 +57,9 @@ typedef struct
 // Function prototypes
 ///////////////////////////////////////////////////////////////////////////////
 
-void initTIM(TIM_TypeDef *TIMx, uint32_t psc_val);
-void delay_millis(TIM_TypeDef * TIMx, uint32_t ms);
-void initPWM(TIM_TypeDef *TIMx, uint32_t psc_val);
-void PWM_setDutyCycle(TIM_TypeDef *TIMx, uint32_t note_freq, uint32_t duty_cycle)
+void initTIM(TIMx_TypeDef *TIMx, uint32_t psc_val);
+void delay_millis(TIMx_TypeDef * TIMx, uint32_t ms, uint32_t psc_val);
+void initPWM(TIMx_TypeDef *TIMx, uint32_t psc_val);
+void PWM_setDutyCycle(TIMx_TypeDef *TIMx, uint32_t note_freq, uint32_t duty_cycle, uint32_t psc_val);
 
 #endif

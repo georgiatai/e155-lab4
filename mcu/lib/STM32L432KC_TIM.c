@@ -1,49 +1,49 @@
+/////////////////////////
 // STM32L432KC_TIM.c
-// Source code for TIM functions
+// Author: Georgia Tai, ytai@g.hmc.edu
+// Date: Sep 28, 2025
+// 
+// Source code for TIM functions, including initialization, delay, and PWM generation.
+/////////////////////////
 
 #include "STM32L432KC_TIM.h"
 #include <stdio.h>
 
+// Initialize timer for basic counting (delay)
 void initTIM(TIMx_TypeDef *TIMx, uint32_t psc_val) {
     // Set prescaler value
     TIMx->PSC = psc_val;
 
-    //// Disable slave mode (bit 16, 2:0 = 0000)
-    //TIMx->SMCR &= ~(0b111 << 0);
-    //TIMx->SMCR &= ~(1 << 16);
-
-    // clear UIF
+    // Clear UG bit (TIMx_EGR[0]) and setting it to generate an update event
     TIMx->EGR  &= ~(1 << 0);
-    // Generate an update event to load the prescaler value to the clock
     TIMx->EGR |= (1 << 0); 
 
-    // Counter Enable
+    // Counter enable (CEN, TIMx_CR1[0])
     TIMx->CR1 |= (1 << 0);
-
 }
 
+// Delay in milliseconds using TIMx
 void delay_millis(TIMx_TypeDef * TIMx, uint32_t ms, uint32_t psc_val) {
-    // Set auto-reload register
-    // wait_time / 1000 * freq = arr_val
+    // Set auto-reload register (TIMx_ARR[15:0])
+    // arr_val = wait_time / 1000 * freq_TIM
     int arr_val = ms * (80000 / (psc_val+1));
     TIMx->ARR = arr_val;
 
-    // clear UIF
+    // Clear UG bit (TIMx_EGR[0]) and setting it to generate an update event
     TIMx->EGR  &= ~(1 << 0);
-
-    // force update
     TIMx->EGR |=  (1 << 0);
 
-    // clear UIF
+    // Clear UIF (TIMx_SR[0])
     TIMx->SR  &= ~(1 << 0);
 
-    // reset count
+    // Reset count (TIMx_CNT[15:0])
     TIMx->CNT = 0;
   
-    // Wait for update event (SR bit 0)
+    // Wait for update event with UIF (TIMx_SR[0]) set
     while(((TIMx->SR) & 1U) != 1);
 }
 
+// Initialize timer for PWM generation
 void initPWM(TIMx_TypeDef *TIMx, uint32_t psc_val) {
     // Set prescaler value
     TIMx->PSC = psc_val;
@@ -69,22 +69,22 @@ void initPWM(TIMx_TypeDef *TIMx, uint32_t psc_val) {
 
     // Enable counter
     TIMx->CR1 = (1 << 0);
-
 }
 
+// PWM signal generation with input frequency and duty cycle
 void PWM_setDutyCycle(TIMx_TypeDef *TIMx, uint32_t note_freq, uint32_t duty_cycle, uint32_t psc_val) {
     // Set auto-reload register
-    // clock_freq = 80 MHz / (psc_val + 1)
-    // arr_val = clock_freq / note_freq
+    // freq_TIM = 80 MHz / (psc_val + 1)
+    // arr_val = freq_TIM / note_freq - 1
     int arr_val = (note_freq > 0) ? ((80000000 / (psc_val+1)) / note_freq - 1) : 0;
     TIMx->ARR = arr_val;
 
+    // Set capture/compare register 1
     TIMx->CCR1 = arr_val * duty_cycle / 100;
 
-    // force update
+    // Force update
     TIMx->EGR |= (1 << 0);
 
-    // reset count
+    // Reset count
     TIMx->CNT = 0;
-
 }

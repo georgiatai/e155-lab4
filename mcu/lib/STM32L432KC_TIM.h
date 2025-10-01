@@ -1,5 +1,10 @@
+/////////////////////////
 // STM32L432KC_TIM.h
-// Header for TIM functions
+// Author: Georgia Tai, ytai@g.hmc.edu
+// Date: Sep 27, 2025
+// 
+// Header file for STM32L432KC_TIM.c, including TIM struct.
+/////////////////////////
 
 #ifndef STM32L4_TIM_H
 #define STM32L4_TIM_H
